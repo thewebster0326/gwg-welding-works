@@ -66,38 +66,22 @@
     reveals.forEach((element) => element.classList.add('is-visible'));
   }
 
-  const navLinks = document.querySelectorAll('.desktop-nav a');
-  const navSections = [...navLinks].map((link) => document.querySelector(link.getAttribute('href'))).filter(Boolean);
-  if ('IntersectionObserver' in window) {
-    const sectionObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          navLinks.forEach((link) => {
-            const active = link.getAttribute('href') === `#${entry.target.id}`;
-            link.classList.toggle('active', active);
-            if (active) link.setAttribute('aria-current', 'location');
-            else link.removeAttribute('aria-current');
-          });
-        }
-      });
-    }, { rootMargin: '-25% 0px -65%', threshold: 0 });
-    navSections.forEach((section) => sectionObserver.observe(section));
-  }
-
-  const heroVisual = document.querySelector('[data-tilt]');
-  const heroInner = heroVisual.querySelector('.hero-visual-inner');
   if (finePointer.matches && !reducedMotion.matches) {
-    heroVisual.addEventListener('pointermove', (event) => {
-      const bounds = heroVisual.getBoundingClientRect();
-      const x = (event.clientX - bounds.left) / bounds.width - 0.5;
-      const y = (event.clientY - bounds.top) / bounds.height - 0.5;
-      heroInner.style.setProperty('--hero-rx', `${-y * 6}deg`);
-      heroInner.style.setProperty('--hero-ry', `${x * 7}deg`);
-    });
-    heroVisual.addEventListener('pointerleave', () => {
-      heroInner.style.setProperty('--hero-rx', '0deg');
-      heroInner.style.setProperty('--hero-ry', '0deg');
-    });
+    const heroVisual = document.querySelector('[data-tilt]');
+    if (heroVisual) {
+      const heroInner = heroVisual.querySelector('.hero-visual-inner');
+      heroVisual.addEventListener('pointermove', (event) => {
+        const bounds = heroVisual.getBoundingClientRect();
+        const x = (event.clientX - bounds.left) / bounds.width - 0.5;
+        const y = (event.clientY - bounds.top) / bounds.height - 0.5;
+        heroInner.style.setProperty('--hero-rx', `${-y * 6}deg`);
+        heroInner.style.setProperty('--hero-ry', `${x * 7}deg`);
+      });
+      heroVisual.addEventListener('pointerleave', () => {
+        heroInner.style.setProperty('--hero-rx', '0deg');
+        heroInner.style.setProperty('--hero-ry', '0deg');
+      });
+    }
 
     document.querySelectorAll('[data-tilt-card]').forEach((card) => {
       card.addEventListener('pointermove', (event) => {
@@ -138,163 +122,166 @@
           card.classList.add('filter-enter');
         }
       });
-      emptyMessage.hidden = visibleCount > 0;
+      if (emptyMessage) emptyMessage.hidden = visibleCount > 0;
     });
   });
 
   const lightbox = document.querySelector('#project-lightbox');
-  const lightboxImage = lightbox.querySelector('figure img');
-  const lightboxCount = lightbox.querySelector('figcaption span');
-  const lightboxTitle = lightbox.querySelector('figcaption strong');
-  const closeLightboxButton = lightbox.querySelector('.lightbox-close');
-  let currentProject = 0;
-  let touchStartX = 0;
+  if (lightbox) {
+    const lightboxImage = lightbox.querySelector('figure img');
+    const lightboxCount = lightbox.querySelector('figcaption span');
+    const lightboxTitle = lightbox.querySelector('figcaption strong');
+    const closeLightboxButton = lightbox.querySelector('.lightbox-close');
+    let currentProject = 0;
+    let touchStartX = 0;
 
-  const visibleProjects = () => projectCards.filter((card) => !card.hidden);
+    const visibleProjects = () => projectCards.filter((card) => !card.hidden);
 
-  const renderProject = () => {
-    const projects = visibleProjects();
-    if (!projects.length) return;
-    currentProject = (currentProject + projects.length) % projects.length;
-    const project = projects[currentProject];
-    const thumbnail = project.querySelector('img');
-    lightboxImage.src = project.dataset.image;
-    lightboxImage.alt = thumbnail.alt;
-    lightboxTitle.textContent = project.dataset.title;
-    lightboxCount.textContent = `${String(currentProject + 1).padStart(2, '0')} / ${String(projects.length).padStart(2, '0')}`;
-  };
+    const renderProject = () => {
+      const projects = visibleProjects();
+      if (!projects.length) return;
+      currentProject = (currentProject + projects.length) % projects.length;
+      const project = projects[currentProject];
+      const thumbnail = project.querySelector('img');
+      lightboxImage.src = project.dataset.image;
+      lightboxImage.alt = thumbnail.alt;
+      lightboxTitle.textContent = project.dataset.title;
+      lightboxCount.textContent = `${String(currentProject + 1).padStart(2, '0')} / ${String(projects.length).padStart(2, '0')}`;
+    };
 
-  projectCards.forEach((card) => {
-    card.addEventListener('click', () => {
-      currentProject = visibleProjects().indexOf(card);
-      renderProject();
-      lightbox.showModal();
-      document.body.style.overflow = 'hidden';
+    projectCards.forEach((card) => {
+      card.addEventListener('click', () => {
+        currentProject = visibleProjects().indexOf(card);
+        renderProject();
+        lightbox.showModal();
+        document.body.style.overflow = 'hidden';
+      });
     });
-  });
 
-  const closeLightbox = () => lightbox.close();
-  closeLightboxButton.addEventListener('click', closeLightbox);
-  lightbox.querySelector('.lightbox-prev').addEventListener('click', () => {
-    currentProject -= 1;
-    renderProject();
-  });
-  lightbox.querySelector('.lightbox-next').addEventListener('click', () => {
-    currentProject += 1;
-    renderProject();
-  });
-  lightbox.addEventListener('click', (event) => {
-    if (event.target === lightbox) closeLightbox();
-  });
-  lightbox.addEventListener('close', () => {
-    document.body.style.overflow = '';
-    lightboxImage.src = '';
-  });
-  lightbox.addEventListener('keydown', (event) => {
-    if (event.key === 'ArrowLeft') {
+    const closeLightbox = () => lightbox.close();
+    closeLightboxButton.addEventListener('click', closeLightbox);
+    lightbox.querySelector('.lightbox-prev').addEventListener('click', () => {
       currentProject -= 1;
       renderProject();
-    }
-    if (event.key === 'ArrowRight') {
+    });
+    lightbox.querySelector('.lightbox-next').addEventListener('click', () => {
       currentProject += 1;
       renderProject();
-    }
-  });
-  lightbox.addEventListener('touchstart', (event) => {
-    touchStartX = event.changedTouches[0].clientX;
-  }, { passive: true });
-  lightbox.addEventListener('touchend', (event) => {
-    const distance = event.changedTouches[0].clientX - touchStartX;
-    if (Math.abs(distance) > 60) {
-      currentProject += distance < 0 ? 1 : -1;
-      renderProject();
-    }
-  }, { passive: true });
-
-  document.querySelectorAll('[data-service]').forEach((link) => {
-    link.addEventListener('click', () => {
-      const serviceSelect = document.querySelector('#quote-form select[name="service"]');
-      serviceSelect.value = link.dataset.service;
     });
-  });
+    lightbox.addEventListener('click', (event) => {
+      if (event.target === lightbox) closeLightbox();
+    });
+    lightbox.addEventListener('close', () => {
+      document.body.style.overflow = '';
+      lightboxImage.src = '';
+    });
+    lightbox.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') {
+        currentProject -= 1;
+        renderProject();
+      }
+      if (event.key === 'ArrowRight') {
+        currentProject += 1;
+        renderProject();
+      }
+    });
+    lightbox.addEventListener('touchstart', (event) => {
+      touchStartX = event.changedTouches[0].clientX;
+    }, { passive: true });
+    lightbox.addEventListener('touchend', (event) => {
+      const distance = event.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(distance) > 60) {
+        currentProject += distance < 0 ? 1 : -1;
+        renderProject();
+      }
+    }, { passive: true });
+  }
 
   const quoteForm = document.querySelector('#quote-form');
-  const formStatus = document.querySelector('#form-status');
-  quoteForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    if (!quoteForm.reportValidity()) return;
-    const data = new FormData(quoteForm);
-    const lines = [
-      'Hi GwG Welding Works, I would like to request a quote.',
-      '',
-      `Name: ${data.get('name')}`,
-      `Phone: ${data.get('phone') || 'Not provided'}`,
-      `Service: ${data.get('service')}`,
-      `Area: ${data.get('area') || 'Not provided'}`,
-      '',
-      'Project details:',
-      data.get('message')
-    ];
-    const url = `https://wa.me/27656596566?text=${encodeURIComponent(lines.join('\n'))}`;
-    const whatsappWindow = window.open(url, '_blank');
-    if (whatsappWindow) {
-      whatsappWindow.opener = null;
-      formStatus.textContent = 'WhatsApp opened with your project details.';
-    } else {
-      window.location.assign(url);
+  if (quoteForm) {
+    const formStatus = document.querySelector('#form-status');
+    const requestedService = new URLSearchParams(window.location.search).get('service');
+    if (requestedService) {
+      const serviceSelect = quoteForm.querySelector('select[name="service"]');
+      const validService = [...serviceSelect.options].some((option) => option.value === requestedService);
+      if (validService) serviceSelect.value = requestedService;
     }
-  });
+
+    quoteForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (!quoteForm.reportValidity()) return;
+      const data = new FormData(quoteForm);
+      const lines = [
+        'Hi GwG Welding Works, I would like to request a quote.',
+        '',
+        `Name: ${data.get('name')}`,
+        `Phone: ${data.get('phone') || 'Not provided'}`,
+        `Service: ${data.get('service')}`,
+        `Area: ${data.get('area') || 'Not provided'}`,
+        '',
+        'Project details:',
+        data.get('message')
+      ];
+      const url = `https://wa.me/27656596566?text=${encodeURIComponent(lines.join('\n'))}`;
+      const whatsappWindow = window.open(url, '_blank');
+      if (whatsappWindow) {
+        whatsappWindow.opener = null;
+        formStatus.textContent = 'WhatsApp opened with your project details.';
+      } else {
+        window.location.assign(url);
+      }
+    });
+  }
 
   document.querySelector('#current-year').textContent = new Date().getFullYear();
 
   const canvas = document.querySelector('#spark-canvas');
-  const context = canvas.getContext('2d');
-  let particles = [];
-  let animationFrame = 0;
-  let canvasVisible = true;
+  const context = canvas ? canvas.getContext('2d') : null;
+  if (context && !reducedMotion.matches) {
+    let particles = [];
+    let animationFrame = 0;
+    let canvasVisible = true;
 
-  const createParticle = (initial = false) => ({
-    x: Math.random() * canvas.clientWidth,
-    y: initial ? Math.random() * canvas.clientHeight : canvas.clientHeight + 10,
-    length: Math.random() * 3 + 1,
-    speed: Math.random() * 0.35 + 0.12,
-    drift: (Math.random() - 0.5) * 0.18,
-    opacity: Math.random() * 0.45 + 0.08
-  });
-
-  const resizeCanvas = () => {
-    if (reducedMotion.matches) return;
-    const ratio = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.round(canvas.clientWidth * ratio);
-    canvas.height = Math.round(canvas.clientHeight * ratio);
-    context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    const count = Math.min(Math.floor(canvas.clientWidth / 32), 45);
-    particles = Array.from({ length: count }, () => createParticle(true));
-  };
-
-  const drawSparks = () => {
-    if (!canvasVisible || document.hidden || reducedMotion.matches) {
-      animationFrame = 0;
-      return;
-    }
-    context.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-    particles.forEach((particle, index) => {
-      context.beginPath();
-      context.strokeStyle = `rgba(239, 106, 46, ${particle.opacity})`;
-      context.lineWidth = 1;
-      context.moveTo(particle.x, particle.y);
-      context.lineTo(particle.x - particle.drift * 8, particle.y + particle.length);
-      context.stroke();
-      particle.y -= particle.speed;
-      particle.x += particle.drift;
-      if (particle.y < -10 || particle.x < -10 || particle.x > canvas.clientWidth + 10) {
-        particles[index] = createParticle();
-      }
+    const createParticle = (initial = false) => ({
+      x: Math.random() * canvas.clientWidth,
+      y: initial ? Math.random() * canvas.clientHeight : canvas.clientHeight + 10,
+      length: Math.random() * 3 + 1,
+      speed: Math.random() * 0.35 + 0.12,
+      drift: (Math.random() - 0.5) * 0.18,
+      opacity: Math.random() * 0.45 + 0.08
     });
-    animationFrame = window.requestAnimationFrame(drawSparks);
-  };
 
-  if (!reducedMotion.matches && context) {
+    const resizeCanvas = () => {
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(canvas.clientWidth * ratio);
+      canvas.height = Math.round(canvas.clientHeight * ratio);
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      const count = Math.min(Math.floor(canvas.clientWidth / 32), 45);
+      particles = Array.from({ length: count }, () => createParticle(true));
+    };
+
+    const drawSparks = () => {
+      if (!canvasVisible || document.hidden || reducedMotion.matches) {
+        animationFrame = 0;
+        return;
+      }
+      context.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+      particles.forEach((particle, index) => {
+        context.beginPath();
+        context.strokeStyle = `rgba(239, 106, 46, ${particle.opacity})`;
+        context.lineWidth = 1;
+        context.moveTo(particle.x, particle.y);
+        context.lineTo(particle.x - particle.drift * 8, particle.y + particle.length);
+        context.stroke();
+        particle.y -= particle.speed;
+        particle.x += particle.drift;
+        if (particle.y < -10 || particle.x < -10 || particle.x > canvas.clientWidth + 10) {
+          particles[index] = createParticle();
+        }
+      });
+      animationFrame = window.requestAnimationFrame(drawSparks);
+    };
+
     resizeCanvas();
     drawSparks();
     window.addEventListener('resize', resizeCanvas);
